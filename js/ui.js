@@ -285,7 +285,7 @@ const UI = {
 };
 
 const CONST_LABLE_R = PHYS.CONST.RSUN / 1000;
-const STAR_ID_COLORS = ['#ffca6a', '#7ab8ff'];
+// STAR_ID_COLORS 在 render.js 中已声明为全局 const(主星金/伴星蓝),这里直接引用
 function fmtL(l) {
   if (l >= 1000) return l.toExponential(2) + ' L☉';
   if (l >= 0.01) return l.toFixed(2) + ' L☉';
@@ -304,6 +304,5 @@ function fmtMdot(mdotMyr) {
 
 if (typeof window !== 'undefined') {
   window.UI = UI;
-  window.STAR_ID_COLORS = STAR_ID_COLORS;
   window.fmtMdot = fmtMdot;
 }
