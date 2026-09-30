@@ -7,6 +7,8 @@ const Game = {
   speed: 10,
   playing: false,
   phase: 0,
+  meanAnom: 0,
+  _uiAcc: 0,
   unlocked: new Set(),
   doneLevels: new Set(),
   trails: null,
@@ -65,6 +67,10 @@ const Game = {
     UI.els.endMenu.onclick = () => { UI.hide('modalEnd'); UI.els.btnBack.onclick(); };
     UI.els.freeStart.onclick = () => this.startFree();
     UI.els.freeCancel.onclick = () => UI.hide('modalFree');
+    UI.els.incSlider.oninput = () => {
+      if (this.sim) this.sim.orbit.inc = Number(UI.els.incSlider.value);
+      UI.updateIncUI(this.sim);
+    };
     ['free-m1', 'free-m2', 'free-p', 'free-e', 'free-i'].forEach((id) => {
       document.getElementById(id).oninput = () => this.updateFreePreview();
     });
@@ -96,6 +102,7 @@ const Game = {
   showLevelChoice(lv) {
     UI.els.choiceTitle.textContent = lv.name + '：选择通道';
     UI.els.choiceDesc.textContent = lv.brief;
+    UI.clearChoiceMeta();
     UI.els.choiceOptions.innerHTML = '';
     lv.choice.forEach((opt) => {
       const b = document.createElement('button');
@@ -119,6 +126,7 @@ const Game = {
     UI.els.hudLevelName.textContent = level.icon + ' ' + level.name;
     UI.els.hintText.textContent = '💡 ' + (level.hint || '');
     this.setGoals(level.goals.map((g) => ({ ...g, done: false })));
+    if (level.speed) this.speed = level.speed;
     UI.setSpeedUI(this.speed);
     UI.hide('menuScreen');
     UI.show('gameScreen');
@@ -144,9 +152,12 @@ const Game = {
     this.hrd.push(this.sim);
     UI.clearLog();
     this.playing = false;
+    this.meanAnom = 0;
+    this.orbitView.smoothScale = 0;
     UI.els.btnPlay.textContent = '▶ 开始演化';
+    UI.setInc(this.sim.orbit.inc || 0);
     UI.update(this.sim);
-    this.lc.draw(this.sim);
+    this.lc.draw(this.sim, 0);
     this.orbitView.draw(this.sim, 0, 0);
     this.hrd.draw(this.sim);
   },
@@ -176,10 +187,11 @@ const Game = {
     const rl1 = PHYS.eggletonRL_over_a(m1 / m2) * a;
     const rl2 = PHYS.eggletonRL_over_a(m2 / m1) * a;
     const tms = PHYS.msLifetime_Myr(m1);
-    const ecl = Math.sin((inc * Math.PI) / 180) > (PHYS.zamsRadius(m1) + PHYS.zamsRadius(m2)) / a;
+    const ecl = Math.cos((inc * Math.PI) / 180) * a < PHYS.zamsRadius(m1) + PHYS.zamsRadius(m2);
     document.getElementById('free-preview').innerHTML =
-      `<b>间距 a</b> ${a.toFixed(1)} R☉ ｜ <b>主星洛希瓣</b> ${rl1.toFixed(1)} R☉（半径 ${PHYS.zamsRadius(m1).toFixed(2)}）<br>` +
-      `<b>主星主序寿命</b> ${(tms / 1000).toFixed(1)} Gyr ｜ ${ecl ? '<span style="color:var(--green)">会是食双星</span>' : '倾角下看不到食'}`;
+      `<b>间距 a</b> ${a.toFixed(1)} R☉ ｜ <b>质量比 q</b> ${(m1 / m2).toFixed(2)}<br>` +
+      `<b>主星洛希瓣</b> ${rl1.toFixed(1)} R☉（主星半径 ${PHYS.zamsRadius(m1).toFixed(2)}） ｜ <b>伴星洛希瓣</b> ${rl2.toFixed(1)} R☉<br>` +
+      `<b>主星主序寿命</b> ${(tms / 1000).toFixed(1)} Gyr ｜ ${ecl ? '<span style="color:var(--green)">当前倾角为食双星</span>' : '当前倾角看不到食'}`;
   },
 
   startFree() {
@@ -296,11 +308,20 @@ const Game = {
           }
         }
       }
-      this.phase = (this.phase + dtReal * 0.16) % 1;
-      this.orbitView.draw(this.sim, this.phase, dtReal);
-      this.lc.draw(this.sim);
-      this.hrd.draw(this.sim);
-      UI.update(this.sim);
+      // 轨道相位:短周期系统转得快,偏心轨道近星点加速(开普勒第二定律)
+      const P = Math.max(this.sim.orbit.pDays, 1e-3);
+      const cyc = Math.min(1.2, Math.max(0.05, 0.35 * Math.cbrt(1 / P)));
+      this.meanAnom = (this.meanAnom + dtReal * cyc * Math.PI * 2) % (Math.PI * 2);
+      const phase01 = this.meanAnom / (Math.PI * 2);
+      this.orbitView.draw(this.sim, this.meanAnom, dtReal);
+      this.lc.draw(this.sim, phase01);
+      // 昂贵的 DOM/Hessian 重建按 8Hz 限流,canvas 仍按帧绘制
+      this._uiAcc += dtReal;
+      if (this._uiAcc >= 0.12) {
+        this._uiAcc = 0;
+        this.hrd.draw(this.sim);
+        UI.update(this.sim);
+      }
     }
     requestAnimationFrame((t) => this.loop(t));
   },

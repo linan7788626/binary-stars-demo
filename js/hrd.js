@@ -3,7 +3,9 @@
 class HRD {
   constructor(canvas) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    this.W = 460;
+    this.H = 300;
+    this.ctx = fitDpr(canvas, this.W, this.H);
     this.trails = [[], []];
   }
 
@@ -35,16 +37,44 @@ class HRD {
 
   draw(sim) {
     const ctx = this.ctx;
-    const W = this.canvas.width;
-    const H = this.canvas.height;
-    ctx.clearRect(0, 0, W, H);
+    const W = this.W;
+    const H = this.H;
     ctx.fillStyle = '#0a0f1e';
     ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = 'rgba(140,160,210,0.7)';
+
+    // 网格与刻度
+    const teffTicks = [3000, 6000, 12000, 25000];
+    const lumTicks = [
+      [0.01, '10⁻²'],
+      [1, '1'],
+      [100, '10²'],
+      [10000, '10⁴'],
+      [1000000, '10⁶'],
+    ];
+    ctx.lineWidth = 1;
+    ctx.font = '10px sans-serif';
+    teffTicks.forEach((t) => {
+      const x = this.xOf(t, W);
+      ctx.strokeStyle = 'rgba(120,140,200,0.13)';
+      ctx.beginPath(); ctx.moveTo(x, 22); ctx.lineTo(x, H - 19); ctx.stroke();
+      ctx.fillStyle = 'rgba(150,160,190,0.7)';
+      ctx.fillText(t >= 1000 ? t / 1000 + 'k' : String(t), x - 8, H - 8);
+    });
+    lumTicks.forEach(([l, lbl]) => {
+      const y = this.yOf(l, H);
+      ctx.strokeStyle = 'rgba(120,140,200,0.13)';
+      ctx.beginPath(); ctx.moveTo(8, y); ctx.lineTo(W - 8, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(150,160,190,0.7)';
+      ctx.fillText(lbl, 10, y - 3);
+    });
+
+    // 标题与轴说明
     ctx.fillStyle = 'rgba(190,200,230,0.9)';
     ctx.font = '11px sans-serif';
-    ctx.fillText('赫罗图（log L – log Teff）', 8, 14);
-    ctx.fillStyle = 'rgba(255,240,200,0.16)';
+    ctx.fillText('赫罗图  纵轴 log L/L☉ · 横轴 log Teff/K（越右越冷）', 8, 14);
+
+    // 主序带背景
+    ctx.fillStyle = 'rgba(255,240,200,0.14)';
     ctx.beginPath();
     for (let m = 0.3; m <= 40; m *= 1.06) {
       const x = this.xOf(PHYS.zamsTeff(m), W);
@@ -59,16 +89,26 @@ class HRD {
     }
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = 'rgba(200,210,240,0.55)';
+    ctx.fillStyle = 'rgba(200,210,240,0.5)';
     ctx.fillText('主序带', this.xOf(9000, W), this.yOf(3, H) - 6);
+
+    // 图例(与星体卡、轨道视图颜色一致)
+    ctx.font = '10px sans-serif';
+    for (let i = 0; i < 2; i++) {
+      const lx = W - 108 + i * 54;
+      ctx.fillStyle = STAR_ID_COLORS[i];
+      ctx.beginPath(); ctx.arc(lx, 11, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(210,220,240,0.85)';
+      ctx.fillText(i === 0 ? '★主星' : '☆伴星', lx + 6, 14);
+    }
+
+    // 两星演化轨迹与当前位置
     ctx.strokeStyle = 'rgba(120,140,200,0.35)';
-    ctx.lineWidth = 1;
     ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
-    const colors = ['#ffca6a', '#7ab8ff'];
     for (let i = 0; i < 2; i++) {
       const tr = this.trails[i];
       if (!tr.length) continue;
-      ctx.strokeStyle = colors[i];
+      ctx.strokeStyle = STAR_ID_COLORS[i];
       ctx.lineWidth = 1.6;
       ctx.globalAlpha = 0.85;
       ctx.beginPath();
@@ -79,20 +119,19 @@ class HRD {
         else ctx.lineTo(x, y);
       });
       ctx.stroke();
+      ctx.globalAlpha = 1;
       const cur = sim.stars[i];
       if (cur.Teff > 0 && cur.L > 0) {
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = colors[i];
-        ctx.beginPath();
-        ctx.arc(this.xOf(cur.Teff, W), this.yOf(cur.L, H), 4, 0, Math.PI * 2);
-        ctx.fill();
+        const px = this.xOf(cur.Teff, W);
+        const py = this.yOf(cur.L, H);
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(px, py, 6.5, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = STAR_ID_COLORS[i];
+        ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2); ctx.fill();
       }
     }
     ctx.globalAlpha = 1;
-    ctx.fillStyle = 'rgba(190,200,230,0.75)';
-    ctx.fillText('冷 ←', 8, H - 8);
-    ctx.fillText('→ 热', W - 40, H - 8);
-    ctx.fillText('亮 ↑', 8, 26);
   }
 }
 

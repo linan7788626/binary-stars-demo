@@ -129,9 +129,10 @@ class Simulation {
   }
 
   isEclipsing() {
+    // 几何判据:视线方向投影 a·cos i 小于两星半径之和时发生掩食
     const rSum = this.s1.R + this.s2.R;
-    const sini = Math.sin((this.orbit.inc * Math.PI) / 180);
-    return sini > rSum / this.orbit.a && rSum < this.orbit.a;
+    const cosi = Math.cos((this.orbit.inc * Math.PI) / 180);
+    return cosi * this.orbit.a < rSum;
   }
 
   refreshLook() {
@@ -384,6 +385,7 @@ class Simulation {
       id: 'sn-kick',
       title: '超新星爆发！',
       desc: `${this.starName(s)}爆发了。抛射带走质量，可能让双星解体。选择爆发方式：`,
+      meta: { kind: 'sn', dmLost: mBefore - rem.m, mTot: this.stars[1 - s.id].M + mBefore },
       options: [
         { id: 'nokick', label: '对称爆发（无反冲踢）', desc: '轨道按质量损失公式响应：偏心率增大；抛射超过系统总质量一半则解体。' },
         { id: 'kick', label: '沿轨道方向踢 ~100 km/s', desc: '理想化"补偿踢"（教学简化）：系统保持束缚，偏心率小幅增加。' },
@@ -492,6 +494,7 @@ class Simulation {
       id: 'mt-mode',
       title: `Case ${caseId} 物质转移开始`,
       desc: `q=${q.toFixed(2)} 低于临界值 ${qcrit}，转移可稳定进行（热时标）。选择角动量处理方式：`,
+      meta: { kind: 'q', q, qcrit },
       options: [
         { id: 'cons', label: '守恒转移', desc: '物质全部落到伴星，总质量与总角动量守恒。轨道响应：dln a = -2 dln M_d (1 - M_d/M_a) 形式，q 跨越 1 时轨道最收缩。' },
         { id: 'noncons', label: '非守恒（一半被星风带走）', desc: '50% 物质带走角动量离开系统（β=0.5，各向同性再入近似）。' },
@@ -502,13 +505,22 @@ class Simulation {
 
   offerCE(donorIdx) {
     const d = this.stars[donorIdx];
+    const acc = this.stars[1 - donorIdx];
     const core = donorCore(d);
     const env = d.M - core;
     const lambda = d.stage === 'AGB' ? PHYS.CONST.LAMBDA_AGB : PHYS.CONST.LAMBDA_RGB;
+    // 提前算出两种 α 下的能量预算,供决策弹窗可视化
+    const b1 = PHYS.ceOutcome(d.M, acc.M, core, env, d.R, this.orbit.a, 1.0, lambda);
+    const b03 = PHYS.ceOutcome(d.M, acc.M, core, env, d.R, this.orbit.a, 0.3, lambda);
     this.pendingChoice = {
       id: 'ce-alpha',
       title: '共有包层（Common Envelope）',
       desc: `失稳转移使伴星浸没在${this.starName(d)}的外包层中。两星在共有包层内旋进，摩擦把轨道能转化为抛射包层的动能。能量判据：E_bind(λ=${lambda}) 与 α×E_orb 之比决定结局。`,
+      meta: {
+        kind: 'energy',
+        ratios: { a1: b1.ratio, a03: b03.ratio },
+        outcomes: { a1: b1.outcome, a03: b03.outcome },
+      },
       options: [
         { id: 'a1', label: '乐观：α = 1.0', desc: '假设轨道能高效转化为包层动能（允许部分抛射结局）。' },
         { id: 'a03', label: '悲观：α = 0.3', desc: '转化效率低，包层更难抛射，旋进更深。' },
@@ -589,6 +601,7 @@ class Simulation {
     const tau = Math.max(0.15 * tauKH, 1e-4);
     let dMd = -Math.min(env, (env / tau) * dt);
     if (d.stage === 'MS') dMd = -Math.min(d.M * 0.5, (env / tau) * dt);
+    this.rlof.mdot = dt > 0 ? -dMd / dt : 0; // M☉/Myr,供界面显示转移速率
     let dMa = -dMd * beta;
     let dMlost = -dMd - dMa;
     if (a.type === 'WD' || a.type === 'NS') {
@@ -717,6 +730,7 @@ class Simulation {
     this.orbit.a = PHYS.keplerA_Rsun(w.M, d.M, this.orbit.pDays);
     const dm = -d.M * (d.M > 0.3 ? 0.18 : 0.3) * dtGyr;
     d.M += dm;
+    if (this.rlof) this.rlof.mdot = dtGyr > 0 ? -dm / (dtGyr * 1000) : 0;
     const accGross = Math.min(-dm, PHYS.CONST.ETA_MAX_ACCRET_MYR * (dtGyr * 1000));
     w.M += accGross * 0.3;
     this.cv.novaAcc += accGross;

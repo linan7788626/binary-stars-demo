@@ -41,6 +41,12 @@
       <div class="panel orbit-params">
         <h3>轨道参数</h3>
         <div id="orbit-params-body" class="kv"></div>
+        <div class="inc-row">
+          <span>观测倾角 i</span>
+          <input type="range" id="inc-slider" min="0" max="90" step="1" value="80" title="拖动倾角,发现食双星">
+          <output id="inc-out">80°</output>
+        </div>
+        <div id="ecl-hint" class="ecl-hint"></div>
       </div>
       <div class="panel log-panel">
         <h3>事件日志</h3>
@@ -66,6 +72,10 @@
       <button class="btn small speed" data-v="100">100×</button>
       <button class="btn small speed" data-v="1000">1000×</button>
     </div>
+    <div class="age-wrap" title="系统年龄相对宇宙年龄(13.8 Gyr)的进度">
+      <div class="age-bar" id="age-bar"><div id="age-fill"></div></div>
+      <div class="age-cap"><span>0</span><span>宇宙年龄 13.8 Gyr</span></div>
+    </div>
     <button id="btn-restart" class="btn small">↺ 重开本关</button>
     <span id="hint-text" class="hint-text"></span>
   </footer>
@@ -75,6 +85,7 @@
   <div class="modal-box">
     <h2 id="choice-title"></h2>
     <p id="choice-desc"></p>
+    <div id="choice-meta" class="choice-meta"></div>
     <div id="choice-options" class="choice-options"></div>
   </div>
 </div>

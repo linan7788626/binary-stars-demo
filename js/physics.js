@@ -23,6 +23,18 @@ function keplerP_days(aRsun, m1, m2) {
   return Math.sqrt(Math.pow(Math.max(aRsun, 1e-6), 3) / (74.55 * (m1 + m2)));
 }
 
+// 由平近点角 M 解开普勒方程求真近点角 ν(牛顿迭代),用于轨道动画:近星点快、远星点慢
+function trueAnomaly(M, e) {
+  if (e < 1e-5) return M;
+  let E = M + e * Math.sin(M);
+  for (let i = 0; i < 6; i++) {
+    const dE = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    E -= dE;
+    if (Math.abs(dE) < 1e-8) break;
+  }
+  return 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2), Math.sqrt(1 - e) * Math.cos(E / 2));
+}
+
 function eggletonRL_over_a(q) {
   if (q <= 0) return 0.379;
   const q23 = Math.pow(q, 2 / 3);
@@ -287,6 +299,7 @@ const PHYS_API = {
   CONST,
   keplerA_Rsun,
   keplerP_days,
+  trueAnomaly,
   eggletonRL_over_a,
   msLifetime_Myr,
   zamsRadius,

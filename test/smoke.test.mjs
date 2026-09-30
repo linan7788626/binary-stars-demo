@@ -31,6 +31,9 @@ const tauBT = PHYS.gwMergeTime_Myr(1.4, 1.4, 2.823, 0);
 ok(tauBT > 1000 && tauBT < 3000, '赫尔斯-泰勒间距圆轨道并合时标 ~1.7 Gyr 量级', tauBT.toFixed(0));
 ok(PHYS.gwMergeTime_Myr(1.4, 1.4, 2.823, 0.617) < tauBT * 0.25, '偏心率加速并合 (Peters 因子)');
 ok(PHYS.keplerP_days(PHYS.keplerA_Rsun(5, 3, 5), 5, 3) - 5 < 1e-6, '开普勒互逆一致性');
+ok(Math.abs(PHYS.trueAnomaly(0, 0.5)) < 1e-9, '真近点角 M=0 → ν=0');
+ok(Math.abs(PHYS.trueAnomaly(Math.PI, 0.5) - Math.PI) < 1e-6, '真近点角 M=π → ν=π');
+ok(PHYS.trueAnomaly(1.0, 0.617) > 1.0, '近星点附近 ν > M (开普勒第二定律)', PHYS.trueAnomaly(1.0, 0.617).toFixed(4));
 
 function runLevel(level, config, expectFlags, maxSteps) {
   const logs = [];

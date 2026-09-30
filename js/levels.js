@@ -7,7 +7,7 @@ const LEVELS = [
     brief: '一对类太阳恒星将度过漫长的一生。观察它们的阶段变化，见证物质转移与白矮星的诞生。',
     icon: '☀️',
     config: { star1: { m: 1.0 }, star2: { m: 1.0 }, pDays: 500, e: 0.1, inc: 80 },
-    speed: 50,
+    speed: 100,
     goals: [
       { id: 'g-rgb', text: '见证一颗恒星变成红巨星（壳层燃烧）', ev: 'rgb' },
       { id: 'g-rlof', text: '经历一次洛希瓣溢出（物质转移）', ev: 'rlof-B' },
@@ -22,7 +22,7 @@ const LEVELS = [
     brief: '5+2.5 M☉ 的密近双星。让主星把包层送给伴星，制造一颗"质量小却更老"的大陵五型双星。',
     icon: '👑',
     config: { star1: { m: 5.0 }, star2: { m: 2.5 }, pDays: 5, e: 0.2, inc: 85 },
-    speed: 5,
+    speed: 10,
     goals: [
       { id: 'g-rlof', text: '触发 Case B 物质转移', ev: 'rlof-B' },
       { id: 'g-algol', text: '触发"大陵五佯谬"事件', ev: 'algol' },
@@ -37,7 +37,7 @@ const LEVELS = [
     brief: '这是一颗已经形成的激变变星（CV）：白矮星 + 充满洛希瓣的主序伴星。观察周期空缺与周期反弹。',
     icon: '💥',
     config: { star1: { m: 0.9, kind: 'wd', wdType: 'CO' }, star2: { m: 0.9, msFrac: 0.5 }, pDays: 0.25, e: 0, inc: 75 },
-    speed: 100,
+    speed: 1000,
     cv: true,
     goals: [
       { id: 'g-cv', text: '进入激变变星吸积阶段', ev: 'cv' },
