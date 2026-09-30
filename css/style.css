@@ -18,10 +18,10 @@ body {
   background: radial-gradient(ellipse at 30% 0%, #101a33 0%, var(--bg) 55%);
   color: var(--text);
   font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
-  overflow: hidden;
+  overflow: auto;
 }
 
-.screen { height: 100vh; display: flex; flex-direction: column; }
+.screen { min-height: 100vh; display: flex; flex-direction: column; }
 .hidden { display: none !important; }
 
 .btn {
@@ -61,7 +61,7 @@ body {
 .menu-actions { display: flex; gap: 12px; justify-content: center; }
 
 .topbar {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   padding: 10px 16px; background: rgba(10,15,30,0.8); border-bottom: 1px solid var(--line);
 }
 .level-info { flex: 1; display: flex; align-items: center; gap: 14px; overflow: hidden; }
@@ -78,10 +78,10 @@ body {
 .game-grid {
   flex: 1; display: grid; min-height: 0;
   grid-template-columns: minmax(420px, 1.4fr) minmax(320px, 1fr);
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(320px, 1fr) auto;
   gap: 10px; padding: 10px;
 }
-.orbit-panel { display: flex; }
+.orbit-panel { display: flex; min-height: 320px; }
 .orbit-panel canvas { width: 100%; height: 100%; display: block; border-radius: 10px; }
 .side-col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 
@@ -106,10 +106,12 @@ body {
 .event-log p.event { border-left-color: var(--green); color: var(--green); }
 .event-log p.warn { border-left-color: var(--red); color: var(--red); }
 
-.bottom-charts { grid-column: 1 / -1; display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 10px; }
-.bottom-charts canvas { width: 100%; height: auto; display: block; }
-.stage-track { font-size: 12px; line-height: 1.9; color: var(--dim); }
+.bottom-charts { grid-column: 1 / -1; display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 10px; min-height: 0; }
+.bottom-charts > .panel { min-height: 0; display: flex; flex-direction: column; }
+.bottom-charts canvas { width: 100%; height: auto; max-height: 32vh; display: block; }
+.stage-track { font-size: 12px; line-height: 1.9; color: var(--dim); overflow: hidden; }
 .stage-track .now { color: var(--gold); }
+.stage-track .pill { font-size: 11px; }
 
 .timebar {
   display: flex; align-items: center; gap: 14px; padding: 10px 16px; flex-wrap: wrap;
@@ -118,7 +120,7 @@ body {
 .time-display { font-variant-numeric: tabular-nums; color: var(--gold); min-width: 130px; font-size: 15px; }
 .speed-group { display: flex; gap: 6px; }
 .speed.active { border-color: var(--gold); color: var(--gold); }
-.age-wrap { flex: 1; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 3px; }
+.age-wrap { flex: 1; min-width: 160px; max-width: 260px; display: flex; flex-direction: column; gap: 3px; }
 .age-bar { position: relative; height: 6px; background: #1a2542; border-radius: 3px; overflow: hidden; }
 .age-bar > div { height: 100%; background: linear-gradient(90deg, #3a5a9e, var(--gold)); border-radius: 3px; width: 0%; transition: width 0.2s; }
 .age-bar.over > div { background: var(--red); }
@@ -180,7 +182,6 @@ body {
 @keyframes slidein { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 @media (max-width: 900px) {
-  body { overflow: auto; }
   .game-grid { grid-template-columns: 1fr; }
   .orbit-panel { height: 46vh; }
   .bottom-charts { grid-template-columns: 1fr; }
